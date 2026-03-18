@@ -5,7 +5,10 @@ from langchain_anthropic import ChatAnthropic  # Claude models
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain.agents import create_agent
-from tools import search_tool, wiki_tool, save_tool
+from tools import search_tool, wiki_tool, save_tool,pinecone_tool #import from tools.py
+import streamlit as st
+
+
 
 load_dotenv()   # Load env var from .env file
 
@@ -37,32 +40,56 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
-tools = [search_tool, wiki_tool, save_tool] #tool list
+# tools = [search_tool, wiki_tool, save_tool,pinecone_tool] #tool list
+tools = [pinecone_tool,save_tool]
+
 agent_graph = create_agent(
     model=llm,
     tools=tools,
-    system_prompt=(
-        "You are a chatbot that will help answer any question the users ask.. "
-        "Answer the user query and use neccessary tools."
-    ),
+    system_prompt=prompt,
     response_format=ResearchResponse,
 )
-query = input("What do you want to ask?: \n")
-raw_response = agent_graph.invoke(
-    {"messages": [{"role": "user", "content": query}]}
-)
 
-try:
-    structured_response = raw_response.get("structured_response")
-    if structured_response is None:
-        messages = raw_response.get("messages", [])
-        last_message = messages[-1] if messages else None
-        output_text = getattr(last_message, "content", None)
-        print(output_text if output_text is not None else raw_response)
-    else:
-        print(structured_response.summary)
-except Exception as e:
-    print("Error parsing response", e, "Raw Response - ", raw_response)
 
+
+# Streamlit 
+st.title("🔎 Search agent")
+
+query = st.text_input("Ask a question")
+
+if st.button("Search"):
+
+    with st.spinner("Thinking..."):
+
+        raw_response = agent_graph.invoke(
+            {"messages": [{"role": "user", "content": query}]}
+        )
+
+        try:
+            structured_response = raw_response.get("structured_response")
+
+            if structured_response is None:
+                messages = raw_response.get("messages", [])
+                last_message = messages[-1] if messages else None
+                output_text = getattr(last_message, "content", None)
+                st.write(output_text)
+            else:
+                st.subheader("Topic")
+                st.write(structured_response.topic)
+
+                st.subheader("Summary")
+                st.write(structured_response.summary)
+
+                st.subheader("Sources")
+                for s in structured_response.sources:
+                    st.write("-", s)
+
+                st.subheader("Tools Used")
+                for t in structured_response.tools_used:
+                    st.write("-", t)
+
+        except Exception as e:
+            st.error(f"Error parsing response: {e}")
+            st.write(raw_response)
 
 
