@@ -1,6 +1,11 @@
 # AgenticAITutorial
 
-## .env file:
+## .env file: 
 OPENAI_API_KEY= XXXXX
 
 ANTHROPIC_API_KEY=YYYYY
+
+
+PINECONE_API_KEY = XXXXX
+
+PINECONE_ENVIRONMENT = us-east-1
