@@ -3,6 +3,8 @@ from langchain_community.tools import WikipediaQueryRun, DuckDuckGoSearchRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from langchain_core.tools import StructuredTool
 from datetime import datetime
+from langchain_core.tools.retriever import create_retriever_tool
+from PineFile import get_retriever 
 
 def save_to_txt(data: str, filename: str = "response_output.txt"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -28,6 +30,13 @@ search_tool = StructuredTool.from_function(
     name="search",
     func=web_search,
     description="Search the web for information",
+)
+
+
+pinecone_tool = create_retriever_tool(
+    retriever = get_retriever(k=3), #from PineFile(datastore)
+    name="pinecone_search",
+    description= "Search vector database. Use this to acesss pdf document."
 )
 
 api_wrapper = WikipediaAPIWrapper(top_k_results=1, doc_content_chars_max=100)
