@@ -1,4 +1,4 @@
-# Agentic AI Tutorial
+# RAG Framework Chatbot
 
 This project demonstrates how to build agent-based AI applications using modern LLM tools and vector databases.
 
